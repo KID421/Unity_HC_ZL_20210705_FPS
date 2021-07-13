@@ -13,6 +13,16 @@ public class BasePerson : MonoBehaviour
     public float attack = 10;
     [Header("旋轉速度"), Range(0, 1000)]
     public float turn = 5;
+    [Header("上下旋轉靈敏度"), Range(0, 100)]
+    public float mouseUpDown = 1.5f;
+    [Header("目標物件上下範圍限制")]
+    public Vector2 v2TargetLimit = new Vector2(0, 3);
+
+    /// <summary>
+    /// 目標物件
+    /// </summary>
+    [HideInInspector]
+    public Transform traTarget;
 
     /// <summary>
     /// 血量最大值
@@ -21,10 +31,6 @@ public class BasePerson : MonoBehaviour
     private Animator ani;
     private Rigidbody rig;
     private AudioSource aud;
-    /// <summary>
-    /// 目標物件
-    /// </summary>
-    private Transform traTarget;
     #endregion
 
     #region 事件
@@ -56,11 +62,6 @@ public class BasePerson : MonoBehaviour
         rig.MovePosition(transform.position + movePosition * speed);
     }
 
-    [Header("上下旋轉靈敏度"), Range(0, 100)]
-    public float mouseUpDown = 1.5f;
-    [Header("目標物件上下範圍限制")]
-    public Vector2 v2TargetLimit = new Vector2(0, 3);
-
     /// <summary>
     /// 旋轉
     /// </summary>
@@ -78,13 +79,16 @@ public class BasePerson : MonoBehaviour
         traTarget.localPosition = posTarget;
     }
 
+    Vector3 posRig;
+
     /// <summary>
     /// 動畫 - 移動
     /// </summary>
     private void AnimatorMove()
     {
-        bool move = Mathf.Abs(rig.velocity.x) >= 0.05f || Mathf.Abs(rig.velocity.z) >= 0.05f;
+        bool move = rig.position != posRig;
         ani.SetBool("走路開關", move);
+        posRig = rig.position;
     }
     #endregion
 }
