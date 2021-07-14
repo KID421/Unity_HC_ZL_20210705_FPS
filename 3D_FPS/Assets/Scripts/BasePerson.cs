@@ -18,6 +18,7 @@ public class BasePerson : MonoBehaviour
     [Header("目標物件上下範圍限制")]
     public Vector2 v2TargetLimit = new Vector2(0, 3);
 
+    // HideInInspector 可以讓公開欄位不要顯示在面板
     /// <summary>
     /// 目標物件
     /// </summary>
@@ -33,6 +34,34 @@ public class BasePerson : MonoBehaviour
     private AudioSource aud;
     #endregion
 
+    [Header("發射子彈位置")]
+    public Transform traFirePoint;
+    [Header("子彈預製物")]
+    public GameObject objBullet;
+    [Header("子彈發射速度"), Range(0, 3000)]
+    public float speedBullet = 600;
+    [Header("子彈發射間隔"), Range(0, 1)]
+    public float intervalFire = 0.5f;
+    [Header("開槍音效")]
+    public AudioClip soundFire;
+
+    /// <summary>
+    /// 子彈目前數量
+    /// </summary>
+    private int bulletCurrent = 30;
+    /// <summary>
+    /// 彈匣數量
+    /// </summary>
+    private int bulletClip = 30;
+    /// <summary>
+    /// 子彈總數
+    /// </summary>
+    private int bulletTotal = 120;
+
+    /// <summary>
+    /// 開槍用計時器
+    /// </summary>
+    private float timerFire;
     #region 事件
     private void Start()
     {
@@ -47,7 +76,7 @@ public class BasePerson : MonoBehaviour
 
     private void Update()
     {
-        AnimatorMove();
+        //AnimatorMove();
     }
     #endregion
 
@@ -79,16 +108,28 @@ public class BasePerson : MonoBehaviour
         traTarget.localPosition = posTarget;
     }
 
-    Vector3 posRig;
-
     /// <summary>
     /// 動畫 - 移動
     /// </summary>
     private void AnimatorMove()
     {
-        bool move = rig.position != posRig;
-        ani.SetBool("走路開關", move);
-        posRig = rig.position;
+        ani.SetBool("走路開關", rig.velocity.x != 0 || rig.velocity.z != 0);
+    }
+
+    /// <summary>
+    /// 開槍方法
+    /// </summary>
+    public void Fire()
+    {
+        if (timerFire < intervalFire) timerFire += Time.deltaTime;
+        else
+        {
+            bulletCurrent--;
+            timerFire = 0;
+            aud.PlayOneShot(soundFire, Random.Range(0.5f, 1.2f));
+            GameObject tempBullet = Instantiate(objBullet, traFirePoint.position, Quaternion.identity);
+            tempBullet.GetComponent<Rigidbody>().AddForce(-traFirePoint.forward * speedBullet);
+        }
     }
     #endregion
 }

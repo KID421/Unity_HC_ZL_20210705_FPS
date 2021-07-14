@@ -24,6 +24,14 @@ public class ControllerPlayer : MonoBehaviour
     private Transform traCamera;
     #endregion
 
+    /// <summary>
+    /// 旋轉攝影機：面向目標物件
+    /// </summary>
+    private void TurnCamera()
+    {
+        traCamera.LookAt(basePerson.traTarget);
+    }
+
     #region 事件
     private void Start()
     {
@@ -36,6 +44,7 @@ public class ControllerPlayer : MonoBehaviour
         GetMoveInput();
         GetTurnInput();
         TurnCamera();
+        Fire();
 
         // 呼叫基底類別 旋轉
         basePerson.Turn(v3Turn.y, v3Turn.x);
@@ -73,11 +82,11 @@ public class ControllerPlayer : MonoBehaviour
     }
 
     /// <summary>
-    /// 旋轉攝影機
+    /// 玩家開槍的方式：按下左鍵
     /// </summary>
-    private void TurnCamera()
+    private void Fire()
     {
-        traCamera.LookAt(basePerson.traTarget);
+        if (Input.GetKey(KeyCode.Mouse0)) basePerson.Fire();
     }
     #endregion
 }
