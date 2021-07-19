@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.Animations.Rigging;
+using System.Collections;
 
 public class BasePerson : MonoBehaviour
 {
@@ -17,7 +19,17 @@ public class BasePerson : MonoBehaviour
     public float mouseUpDown = 1.5f;
     [Header("目標物件上下範圍限制")]
     public Vector2 v2TargetLimit = new Vector2(0, 3);
-
+    [Header("發射子彈位置")]
+    public Transform traFirePoint;
+    [Header("子彈預製物")]
+    public GameObject objBullet;
+    [Header("子彈發射速度"), Range(0, 3000)]
+    public float speedBullet = 600;
+    [Header("子彈發射間隔"), Range(0, 1)]
+    public float intervalFire = 0.5f;
+    [Header("音效")]
+    public AudioClip soundFire;
+    public AudioClip soundFireEmpty;
     // HideInInspector 可以讓公開欄位不要顯示在面板
     /// <summary>
     /// 目標物件
@@ -32,36 +44,37 @@ public class BasePerson : MonoBehaviour
     private Animator ani;
     private Rigidbody rig;
     private AudioSource aud;
-    #endregion
 
-    [Header("發射子彈位置")]
-    public Transform traFirePoint;
-    [Header("子彈預製物")]
-    public GameObject objBullet;
-    [Header("子彈發射速度"), Range(0, 3000)]
-    public float speedBullet = 600;
-    [Header("子彈發射間隔"), Range(0, 1)]
-    public float intervalFire = 0.5f;
-    [Header("開槍音效")]
-    public AudioClip soundFire;
-
+    [HideInInspector]       // 將公開的欄位隱藏
     /// <summary>
     /// 子彈目前數量
     /// </summary>
-    private int bulletCurrent = 30;
+    public int bulletCurrent = 30;
     /// <summary>
     /// 彈匣數量
     /// </summary>
     private int bulletClip = 30;
+    [HideInInspector]
     /// <summary>
     /// 子彈總數
     /// </summary>
-    private int bulletTotal = 120;
-
+    public int bulletTotal = 120;
     /// <summary>
     /// 開槍用計時器
     /// </summary>
     private float timerFire;
+    /// <summary>
+    /// 動畫設置物件
+    /// </summary>
+    private Rig rigging;
+    #endregion
+
+    [Header("檢查地板")]
+    public float groundRadius = 0.5f;
+    public Vector3 groundOffset;
+
+    private bool isGround;
+
     #region 事件
     private void Start()
     {
@@ -72,11 +85,19 @@ public class BasePerson : MonoBehaviour
         #endregion
 
         traTarget = transform.Find("目標物件");
+        rigging = transform.Find("設置物件").GetComponent<Rig>();
     }
 
     private void Update()
     {
         //AnimatorMove();
+        CheckGround();
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = new Color(1, 0, 0, 0.3f);
+        Gizmos.DrawSphere(transform.position + groundOffset, groundRadius);
     }
     #endregion
 
@@ -109,27 +130,95 @@ public class BasePerson : MonoBehaviour
     }
 
     /// <summary>
+    /// 開槍方法
+    /// </summary>
+    public void Fire()
+    {
+        if (ani.GetBool("換彈匣開關")) return;
+
+        if (timerFire < intervalFire) timerFire += Time.deltaTime;
+        else
+        {
+            if (bulletCurrent > 0)
+            {
+                bulletCurrent--;
+                timerFire = 0;
+                aud.PlayOneShot(soundFire, Random.Range(0.5f, 1.2f));
+                GameObject tempBullet = Instantiate(objBullet, traFirePoint.position, Quaternion.identity);
+                tempBullet.GetComponent<Rigidbody>().AddForce(-traFirePoint.forward * speedBullet);
+            }
+            else
+            {
+                aud.PlayOneShot(soundFireEmpty, Random.Range(0.5f, 1.2f));
+                timerFire = 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 換彈匣
+    /// </summary>
+    public void ReloadBullet()
+    {
+        // 如果 目前子彈 等於 彈匣 或者 總數 為零 就跳出 - 不需要補子彈
+        if (bulletCurrent == bulletClip || bulletTotal == 0) return;
+
+        StartCoroutine(Reloading());
+
+        int bulletGetCount = bulletClip - bulletCurrent;        // 計算取出數量 = 彈匣 - 目前
+
+        if (bulletTotal >= bulletGetCount)                      // 如果 總數 大於等於 要取出的數量
+        {
+            bulletTotal -= bulletGetCount;                      // 總數 - 取出數量
+            bulletCurrent += bulletGetCount;                    // 目前 + 取出數量
+        }
+        else                                                    // 總數 不夠時 直接將總數給目前子彈
+        {
+            bulletCurrent += bulletTotal;                       // 將剩餘子彈給目前子彈
+            bulletTotal = 0;                                    // 沒有總數子彈
+        }
+    }
+
+    /// <summary>
+    /// 跳躍功能：利用剛體讓角色往上跳
+    /// </summary>
+    public void Jump()
+    {
+        rigging.weight = 0;
+        rig.AddForce(0, jump, 0);
+        ani.SetBool("跳躍開關", true);
+    }
+
+    /// <summary>
+    /// 檢查地板
+    /// </summary>
+    private void CheckGround()
+    {
+        Collider[] hit = Physics.OverlapSphere(transform.position + groundOffset, groundRadius, 1 << 8);
+        isGround = hit[0] && hit[0].name == "地板";
+    }
+
+    /// <summary>
+    /// 換彈匣狀態 - 動畫以及等待動畫完畢
+    /// </summary>
+    private IEnumerator Reloading()
+    {
+        ani.SetBool("換彈匣開關", true);
+        rigging.weight = 0.5f;
+
+        // ani.GetCurrentAnimatorStateInfo(0).length 取得圖層 0 目前動畫的長度
+        yield return new WaitForSeconds(ani.GetCurrentAnimatorStateInfo(0).length * 0.9f);
+
+        ani.SetBool("換彈匣開關", false);
+        rigging.weight = 1;
+    }
+
+    /// <summary>
     /// 動畫 - 移動
     /// </summary>
     private void AnimatorMove()
     {
         ani.SetBool("走路開關", rig.velocity.x != 0 || rig.velocity.z != 0);
-    }
-
-    /// <summary>
-    /// 開槍方法
-    /// </summary>
-    public void Fire()
-    {
-        if (timerFire < intervalFire) timerFire += Time.deltaTime;
-        else
-        {
-            bulletCurrent--;
-            timerFire = 0;
-            aud.PlayOneShot(soundFire, Random.Range(0.5f, 1.2f));
-            GameObject tempBullet = Instantiate(objBullet, traFirePoint.position, Quaternion.identity);
-            tempBullet.GetComponent<Rigidbody>().AddForce(-traFirePoint.forward * speedBullet);
-        }
     }
     #endregion
 }

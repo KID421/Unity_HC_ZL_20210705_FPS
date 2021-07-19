@@ -2490,7 +2490,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70b342d8ce5c2fd48b8fa3147d48d1d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Weight: 1
+  m_Weight: 0
   m_Effectors: []
 --- !u!4 &449895180
 Transform:
@@ -7504,19 +7504,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 0.1
-  jump: 100
+  jump: 800
   hp: 100
   attack: 10
   turn: 150
   mouseUpDown: 1.1
   v2TargetLimit: {x: 0, y: 3}
-  traTarget: {fileID: 0}
   traFirePoint: {fileID: 1248803954}
   objBullet: {fileID: 5443167574998494417, guid: eee5eb9c2b0b4c24eb1b591afeb0b4be,
     type: 3}
-  speedBullet: 1500
+  speedBullet: 1000
   intervalFire: 0.1
   soundFire: {fileID: 8300000, guid: c553b6325428bba4191d7f80cd005278, type: 3}
+  soundFireEmpty: {fileID: 8300000, guid: 0ab2d763f7012644e871b1c119e53fd3, type: 3}
+  traTarget: {fileID: 0}
+  bulletCurrent: 30
+  bulletTotal: 120
+  groundRadius: 0.1
+  groundOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &1634326960
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9062,7 +9067,7 @@ GameObject:
   - component: {fileID: 1996653474}
   - component: {fileID: 1996653473}
   - component: {fileID: 1996653472}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: "\u5730\u677F"
   m_TagString: Untagged
   m_Icon: {fileID: 0}

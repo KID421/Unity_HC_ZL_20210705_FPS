@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 玩家控制類別：玩家滑鼠、鍵盤的輸入資訊以及跟 Base Person 溝通
@@ -22,6 +23,14 @@ public class ControllerPlayer : MonoBehaviour
     /// 攝影機
     /// </summary>
     private Transform traCamera;
+    /// <summary>
+    /// 目前子彈數量
+    /// </summary>
+    private Text textBulletCurrent;
+    /// <summary>
+    /// 子彈總數
+    /// </summary>
+    private Text textBulletTotal;
     #endregion
 
     /// <summary>
@@ -37,6 +46,9 @@ public class ControllerPlayer : MonoBehaviour
     {
         basePerson = GetComponent<BasePerson>();
         traCamera = transform.Find("攝影機");
+        textBulletCurrent = GameObject.Find("目前子彈數量").GetComponent<Text>();
+        textBulletTotal = GameObject.Find("子彈總數").GetComponent<Text>();
+        UpdateUIBullet();
     }
 
     private void Update()
@@ -45,6 +57,8 @@ public class ControllerPlayer : MonoBehaviour
         GetTurnInput();
         TurnCamera();
         Fire();
+        Reload();
+        Jump();
 
         // 呼叫基底類別 旋轉
         basePerson.Turn(v3Turn.y, v3Turn.x);
@@ -86,7 +100,40 @@ public class ControllerPlayer : MonoBehaviour
     /// </summary>
     private void Fire()
     {
-        if (Input.GetKey(KeyCode.Mouse0)) basePerson.Fire();
+        if (Input.GetKey(KeyCode.Mouse0))
+        { 
+            basePerson.Fire();
+            UpdateUIBullet();
+        }
+    }
+
+    /// <summary>
+    /// 更新子彈介面：目前與總數
+    /// </summary>
+    private void UpdateUIBullet()
+    {
+        textBulletCurrent.text = basePerson.bulletCurrent.ToString();
+        textBulletTotal.text = basePerson.bulletTotal.ToString();
+    }
+
+    /// <summary>
+    /// 換彈匣
+    /// </summary>
+    private void Reload()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        { 
+            basePerson.ReloadBullet();
+            UpdateUIBullet();
+        }
+    }
+
+    /// <summary>
+    /// 按下空白鍵跳躍
+    /// </summary>
+    private void Jump()
+    {
+        if (Input.GetKeyDown(KeyCode.Space)) basePerson.Jump();
     }
     #endregion
 }
