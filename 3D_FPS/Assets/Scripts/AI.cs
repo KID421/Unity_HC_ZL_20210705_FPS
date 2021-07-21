@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;   // 引用 AI API
+using UnityEngine.Assertions.Must;
 
 /// <summary>
 /// 敵人 AI ：決定如何移動、追蹤玩家、開槍跳躍受傷死亡
@@ -81,8 +82,23 @@ public class AI : MonoBehaviour
             posRandom = hitRandomWalk.position;
 
             randomWalking = true;
+
+            agent.enabled = false;
+        }
+        else if (randomWalking)
+        {
+            pos = Vector3.MoveTowards(transform.position, posRandom, 3);
+
+            if (Vector3.Distance(transform.position, pos) > 1)
+            {
+                transform.LookAt(pos);
+                basePerson.Move(transform.forward);
+            }
+            else randomWalking = false;
         }
     }
+
+    Vector3 pos;
 
     /// <summary>
     /// 待機：隨機秒數後開始隨機走動
@@ -127,6 +143,9 @@ public class AI : MonoBehaviour
 
         Gizmos.color = new Color(0, 0.8f, 1, 0.8f);
         Gizmos.DrawSphere(posRandom, 0.5f);
+
+        Gizmos.color = new Color(1, 0, 0, 0.8f);
+        Gizmos.DrawSphere(pos, 0.5f);
     }
     #endregion
 }

@@ -2748,6 +2748,11 @@ PrefabInstance:
       propertyPath: speed
       value: 0.1
       objectReference: {fileID: 0}
+    - target: {fileID: 564234478724443218, guid: cea607a84717ae648bffb185f65f5b30,
+        type: 3}
+      propertyPath: m_Constraints
+      value: 112
+      objectReference: {fileID: 0}
     - target: {fileID: 564234478843047454, guid: cea607a84717ae648bffb185f65f5b30,
         type: 3}
       propertyPath: m_IsActive
@@ -3660,8 +3665,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   state: 0
-  v2IdleToRandomWalk: {x: 2, y: 5}
-  radiusRandomWalk: 20
+  v2IdleToRandomWalk: {x: 0, y: 0}
+  radiusRandomWalk: 10
 --- !u!195 &757371345
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -9291,11 +9296,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 564234478724443218, guid: cea607a84717ae648bffb185f65f5b30,
-        type: 3}
-      propertyPath: m_CollisionDetection
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cea607a84717ae648bffb185f65f5b30, type: 3}

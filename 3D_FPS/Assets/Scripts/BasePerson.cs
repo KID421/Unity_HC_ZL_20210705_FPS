@@ -94,7 +94,7 @@ public class BasePerson : MonoBehaviour
 
     private void Update()
     {
-        // AnimatorMove();
+        AnimatorMove();
         CheckGround();
     }
 
@@ -231,12 +231,16 @@ public class BasePerson : MonoBehaviour
         rigging.weight = 1;
     }
 
+    private Vector3 pos;
+
     /// <summary>
     /// 動畫 - 移動
     /// </summary>
     private void AnimatorMove()
     {
-        ani.SetBool("走路開關", rig.velocity.x != 0 || rig.velocity.z != 0);
+        //ani.SetBool("走路開關", rig.velocity.x != 0 || rig.velocity.z != 0);
+        ani.SetBool("走路開關", pos != transform.position);
+        pos = transform.position;
     }
     #endregion
 }
