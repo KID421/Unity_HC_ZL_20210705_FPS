@@ -30,6 +30,12 @@ public class BasePerson : MonoBehaviour
     [Header("音效")]
     public AudioClip soundFire;
     public AudioClip soundFireEmpty;
+    [Header("檢查地板")]
+    public float groundRadius = 0.5f;
+    public Vector3 groundOffset;
+    [Header("跳躍後恢復權重的時間")]
+    public float timeRestoreWeight = 1.3f;
+
     // HideInInspector 可以讓公開欄位不要顯示在面板
     /// <summary>
     /// 目標物件
@@ -67,13 +73,11 @@ public class BasePerson : MonoBehaviour
     /// 動畫設置物件
     /// </summary>
     private Rig rigging;
-    #endregion
-
-    [Header("檢查地板")]
-    public float groundRadius = 0.5f;
-    public Vector3 groundOffset;
-
+    /// <summary>
+    /// 是否在地板上
+    /// </summary>
     private bool isGround;
+    #endregion
 
     #region 事件
     private void Start()
@@ -90,7 +94,7 @@ public class BasePerson : MonoBehaviour
 
     private void Update()
     {
-        //AnimatorMove();
+        // AnimatorMove();
         CheckGround();
     }
 
@@ -184,18 +188,32 @@ public class BasePerson : MonoBehaviour
     /// </summary>
     public void Jump()
     {
-        rigging.weight = 0;
-        rig.AddForce(0, jump, 0);
-        ani.SetBool("跳躍開關", true);
+        if (isGround)                                       // 如果 在地板上 才能跳躍
+        {
+            rigging.weight = 0;                             // 權重歸零
+            rig.AddForce(0, jump, 0);                       // 推力
+            CancelInvoke("RestoreWeight");                  // 先取消延遲呼叫 恢復權重
+            Invoke("RestoreWeight", timeRestoreWeight);     // 再延遲呼叫 恢復權重
+        }
     }
 
     /// <summary>
-    /// 檢查地板
+    /// 恢復權重為 1
+    /// </summary>
+    private void RestoreWeight()
+    {
+        rigging.weight = 1;
+    }
+
+    /// <summary>
+    /// 檢查地板，並且控制跳躍動畫 - 在地面上不跳躍，不在地面就跳躍
     /// </summary>
     private void CheckGround()
     {
         Collider[] hit = Physics.OverlapSphere(transform.position + groundOffset, groundRadius, 1 << 8);
-        isGround = hit[0] && hit[0].name == "地板";
+        // 如果 碰撞陣列數量 > 0 並且 碰撞物件名稱為地板 就代表在地上 否則 就不再地上
+        isGround = hit.Length > 0 && hit[0].name == "地板" ? true : false;
+        ani.SetBool("跳躍開關", !isGround);
     }
 
     /// <summary>
