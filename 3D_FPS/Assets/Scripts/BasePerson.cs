@@ -5,8 +5,8 @@ using System.Collections;
 public class BasePerson : MonoBehaviour
 {
     #region 欄位
-    [Header("移動速度"), Range(0, 1000)]
-    public float speed = 10;
+    [Header("移動速度"), Range(0, 1)]
+    public float speed = 0.5f;
     [Header("跳躍高度"), Range(0, 1000)]
     public float jump = 100;
     [Header("血量"), Range(0, 1000)]

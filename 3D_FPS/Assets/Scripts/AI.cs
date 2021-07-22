@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;   // 引用 AI API
+using UnityEngine.Animations.Rigging;
 using UnityEngine.Assertions.Must;
 
 /// <summary>
@@ -29,6 +30,8 @@ public class AI : MonoBehaviour
     /// 是否從待機等待前往隨機走動 - 預設為沒有
     /// </summary>
     private bool isWaitToRandomWalk;
+
+    private Transform player;
     #endregion
 
     #region 方法
@@ -46,8 +49,10 @@ public class AI : MonoBehaviour
                 RandomWalk();
                 break;
             case StateAI.TrackTarget:
+                TrackTarget();
                 break;
             case StateAI.Fire:
+                Fire();
                 break;
         }
     }
@@ -91,10 +96,67 @@ public class AI : MonoBehaviour
 
             if (Vector3.Distance(transform.position, pos) > 1)
             {
-                transform.LookAt(pos);
-                basePerson.Move(transform.forward);
+                LookAtPlayer();
             }
-            else randomWalking = false;
+            else
+            {
+                float r = Random.Range(0f, 1f);
+
+                if (r <= 0.5f) state = StateAI.Idle;
+                
+                randomWalking = false;
+            }
+        }
+    }
+
+    private void TrackTarget()
+    {
+        randomWalking = false;
+        
+        if (Quaternion.Angle(transform.rotation, LookAtPlayer()) < 1)
+        {
+            state = StateAI.Fire;
+        }
+    }
+
+    private float timerAim;
+    public float timeAim = 0.2f;
+
+    private Quaternion LookAtPlayer()
+    {
+        Quaternion quaLook = Quaternion.LookRotation(player.position - transform.position);
+        transform.rotation = Quaternion.Lerp(transform.rotation, quaLook, 5 * Time.deltaTime);
+        Vector3 angle = transform.eulerAngles;
+        angle.x = 0;
+        angle.z = 0;
+        transform.eulerAngles = angle;
+
+        return quaLook;
+    }
+
+    private void Fire()
+    {
+        if (basePerson.bulletCurrent > 0)
+        {
+            if (timerAim < timeAim)
+            {
+                timerAim += Time.deltaTime;
+            }
+            else
+            {
+                timerAim = 0;
+                Vector3 posTarget = basePerson.traTarget.localPosition;
+                posTarget.y += Random.Range(-0.05f, 0.05f);
+                posTarget.y = Mathf.Clamp(posTarget.y, 0.8f, 1.3f);
+                basePerson.traTarget.localPosition = posTarget;
+            }
+
+            LookAtPlayer();
+            basePerson.Fire();
+        }
+        else
+        {
+            basePerson.ReloadBullet();
         }
     }
 
@@ -129,12 +191,39 @@ public class AI : MonoBehaviour
     {
         basePerson = GetComponent<BasePerson>();
         agent = GetComponent<NavMeshAgent>();
+
+        player = GameObject.Find("玩家").transform;
     }
 
     private void Update()
     {
         CheckState();
+        CheckPlayer();
     }
+
+    private void CheckPlayer()
+    {
+        if (state == StateAI.Fire) return;
+
+        Collider[] hit = Physics.OverlapBox(transform.position + transform.forward * trackOffset.z, trackSize / 2, transform.rotation, 1 << 9);
+
+        if (hit.Length > 0 && hit[0].name == "玩家")
+        {
+            state = StateAI.TrackTarget;
+        }
+        else if (state != StateAI.RandomWalk)
+        {
+            state = StateAI.Idle;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (randomWalking) basePerson.Move(transform.forward * 0.5f);
+    }
+
+    public Vector3 trackOffset;
+    public Vector3 trackSize;
 
     private void OnDrawGizmos()
     {
@@ -146,6 +235,10 @@ public class AI : MonoBehaviour
 
         Gizmos.color = new Color(1, 0, 0, 0.8f);
         Gizmos.DrawSphere(pos, 0.5f);
+
+        Gizmos.matrix = Matrix4x4.TRS(transform.position + transform.forward * trackOffset.z, transform.rotation, transform.localScale);
+        Gizmos.color = new Color(1, 0.2f, 0.2f, 0.3f);
+        Gizmos.DrawCube(Vector3.zero, trackSize);
     }
     #endregion
 }
