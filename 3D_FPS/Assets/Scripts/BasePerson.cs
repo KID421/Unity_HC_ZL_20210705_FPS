@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;               // 引用 事件 API 寫出與 OnClick 一樣的功能
 using UnityEngine.Animations.Rigging;
 using System.Collections;
 
@@ -35,6 +36,9 @@ public class BasePerson : MonoBehaviour
     public Vector3 groundOffset;
     [Header("跳躍後恢復權重的時間")]
     public float timeRestoreWeight = 1.3f;
+    [Header("傷害音效：一般與爆頭")]
+    public AudioClip soundHit;
+    public AudioClip soundHeadShot;
 
     // HideInInspector 可以讓公開欄位不要顯示在面板
     /// <summary>
@@ -42,6 +46,11 @@ public class BasePerson : MonoBehaviour
     /// </summary>
     [HideInInspector]
     public Transform traTarget;
+    [HideInInspector]
+    /// <summary>
+    /// 是否死亡：記錄此角色是否死亡
+    /// </summary>
+    public bool dead;
 
     /// <summary>
     /// 血量最大值
@@ -79,6 +88,10 @@ public class BasePerson : MonoBehaviour
     private bool isGround;
     #endregion
 
+    // 定義事件：不會執行
+    [Header("受傷事件")]
+    public UnityEvent onHit;
+
     #region 事件
     private void Start()
     {
@@ -103,9 +116,55 @@ public class BasePerson : MonoBehaviour
         Gizmos.color = new Color(1, 0, 0, 0.3f);
         Gizmos.DrawSphere(transform.position + groundOffset, groundRadius);
     }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Contains 屬於 string API 必須是字串才能使用
+        // 如果 碰到物件名稱 包含 子彈 就受傷
+        if (collision.gameObject.name.Contains("子彈"))
+        {
+            // 如果 自身被碰到的 碰撞器類型 是 球體 就爆頭
+            if (collision.contacts[0].thisCollider.GetType() == typeof(SphereCollider)) Hit(100, soundHeadShot);
+            // 否則 就受到子彈傷害
+            else Hit(collision.gameObject.GetComponent<Bullet>().attack, soundHit);
+        }
+    }
     #endregion
 
     #region 方法
+    /// <summary>
+    /// 受傷
+    /// </summary>
+    /// <param name="damage">接收傷害值</param>
+    private void Hit(float damage, AudioClip sound)
+    {
+        hp -= damage;
+        aud.PlayOneShot(sound, Random.Range(0.8f, 1.2f));
+
+        if (hp <= 0) Dead();
+
+        onHit.Invoke();         // 呼叫事件
+    }
+
+    /// <summary>
+    ///死亡：動畫、權重恢復、禁止其他行為
+    /// </summary>
+    private void Dead()
+    {
+        hp = 0;
+        ani.SetBool("死亡開關", true);
+        rigging.weight = 0;
+        dead = true;
+        // 關閉碰撞避免重複死亡判定與子彈碰撞
+        GetComponent<SphereCollider>().enabled = false;
+        GetComponent<CapsuleCollider>().enabled = false;
+        // 剛體加速度歸零並約束所有
+        rig.velocity = Vector3.zero;
+        rig.constraints = RigidbodyConstraints.FreezeAll;
+
+        enabled = false;
+    }
+
     /// <summary>
     /// 移動，必須在 FixedUpdate 呼叫
     /// </summary>
@@ -149,6 +208,10 @@ public class BasePerson : MonoBehaviour
                 timerFire = 0;
                 aud.PlayOneShot(soundFire, Random.Range(0.5f, 1.2f));
                 GameObject tempBullet = Instantiate(objBullet, traFirePoint.position, Quaternion.identity);
+
+                tempBullet.AddComponent<Bullet>().attack = attack;                                          // 添加子彈腳本並賦予攻擊力
+                Physics.IgnoreCollision(GetComponent<Collider>(), tempBullet.GetComponent<Collider>());     // 忽略子彈與開槍者的碰撞
+
                 tempBullet.GetComponent<Rigidbody>().AddForce(-traFirePoint.forward * speedBullet);
             }
             else

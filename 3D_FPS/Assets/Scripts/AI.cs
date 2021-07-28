@@ -97,21 +97,28 @@ public class AI : MonoBehaviour
     private void Fire()
     {
         LookTargetSmooth(player.position);
-        basePerson.Fire();
 
-        if (timerFire <= intervalFire)
+        if (basePerson.bulletCurrent == 0)                  // 如果 子彈 數量 為 零
         {
-            timerFire += Time.deltaTime;
+            basePerson.ReloadBullet();                      // 換彈匣
         }
         else
         {
-            Vector3 posTargetPoint = basePerson.traTarget.localPosition;
-            posTargetPoint.y += (float)(Random.Range(-1, 2) * offsetFire);
-            posTargetPoint.y = Mathf.Clamp(posTargetPoint.y, v2FireLimit.x, v2FireLimit.y);
-            basePerson.traTarget.localPosition = posTargetPoint;
-            timerFire = 0;
+            basePerson.Fire();                              // 否則 就開槍
 
-            print(posTargetPoint.y);
+            if (timerFire <= intervalFire)
+            {
+                timerFire += Time.deltaTime;
+            }
+            else
+            {
+                // 目標物件的偏差，每次開槍後上下晃動
+                Vector3 posTargetPoint = basePerson.traTarget.localPosition;
+                posTargetPoint.y += (float)(Random.Range(-1, 2) * offsetFire);
+                posTargetPoint.y = Mathf.Clamp(posTargetPoint.y, v2FireLimit.x, v2FireLimit.y);
+                basePerson.traTarget.localPosition = posTargetPoint;
+                timerFire = 0;
+            }
         }
     }
 
@@ -237,6 +244,8 @@ public class AI : MonoBehaviour
 
     private void Update()
     {
+        if (basePerson.dead) return;
+
         CheckState();
         // 如果 玩家進入到檢查立方體內 並且 不是在開槍狀態 就進入 追蹤狀態
         if (CheckPlayerInCube() && state != StateAI.Fire ) state = StateAI.TrackTarget;
@@ -244,6 +253,8 @@ public class AI : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (basePerson.dead) return;
+
         if (randomWalking)
         {
             basePerson.Move(transform.forward);

@@ -41,18 +41,35 @@ public class ControllerPlayer : MonoBehaviour
         traCamera.LookAt(basePerson.traTarget);
     }
 
+    /// <summary>
+    /// 血條
+    /// </summary>
+    private Image imgHp;
+    /// <summary>
+    /// 血量
+    /// </summary>
+    private Text textHp;
+
+    private float hpMax;
+
     #region 事件
     private void Start()
     {
+        Cursor.visible = false;                     // 隱藏滑鼠
         basePerson = GetComponent<BasePerson>();
         traCamera = transform.Find("攝影機");
         textBulletCurrent = GameObject.Find("目前子彈數量").GetComponent<Text>();
         textBulletTotal = GameObject.Find("子彈總數").GetComponent<Text>();
+        imgHp = GameObject.Find("血條").GetComponent<Image>();
+        textHp = GameObject.Find("血量").GetComponent<Text>();
+        hpMax = basePerson.hp;
         UpdateUIBullet();
     }
 
     private void Update()
     {
+        if (basePerson.dead) return;
+
         GetMoveInput();
         GetTurnInput();
         TurnCamera();
@@ -67,10 +84,21 @@ public class ControllerPlayer : MonoBehaviour
     // 固定更新事件：50 FPS 物理行為在此事件內執行
     private void FixedUpdate()
     {
+        if (basePerson.dead) return;
+
         // 呼叫基底類別移動(傳入角色方向)
         basePerson.Move(transform.forward * v3Move.z + transform.right * v3Move.x);
     }
     #endregion
+
+    /// <summary>
+    /// 受傷：更新血條與血量介面
+    /// </summary>
+    public void Hit()
+    {
+        imgHp.fillAmount = basePerson.hp / hpMax;
+        textHp.text = "HP " + basePerson.hp;
+    }
 
     #region 方法
     /// <summary>
