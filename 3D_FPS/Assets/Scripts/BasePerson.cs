@@ -91,6 +91,8 @@ public class BasePerson : MonoBehaviour
     // 定義事件：不會執行
     [Header("受傷事件")]
     public UnityEvent onHit;
+    [Header("人物類型")]
+    public PeopleType type;
 
     #region 事件
     private void Start()
@@ -161,6 +163,9 @@ public class BasePerson : MonoBehaviour
         // 剛體加速度歸零並約束所有
         rig.velocity = Vector3.zero;
         rig.constraints = RigidbodyConstraints.FreezeAll;
+
+        // 呼叫遊戲物件.實體物件.有人死亡(類型)
+        GameManager.instance.SomeBodyDead(type);
 
         enabled = false;
     }
